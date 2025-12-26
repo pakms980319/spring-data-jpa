@@ -5,6 +5,8 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -21,8 +23,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
@@ -335,6 +335,34 @@ class MemberRepositoryTest {
 
 		Specification<Member> spec = MemberSpec.username("m1").and(MemberSpec.teamName("teamA"));
 		List<Member> result = memberRepository.findAll(spec);
+		assertThat(result.size()).isEqualTo(1);
+		assertThat(result.get(0).getAge()).isEqualTo(0);
+		assertThat(result.get(0).getUsername()).isEqualTo("m1");
+	}
+
+	@Test
+	public void queryByExample() {
+		Team teamA = new Team("teamA");
+		em.persist(teamA);
+
+		Member m1 = new Member("m1", 0, teamA);
+		Member m2 = new Member("m2", 0, teamA);
+		em.persist(m1);
+		em.persist(m2);
+
+		em.flush();
+		em.clear();
+
+		Member member = new Member("m1");
+		Team team = new Team("teamA");
+		member.setTeam(team);
+
+		ExampleMatcher macher = ExampleMatcher.matching()
+		                                      .withIgnorePaths("age");
+
+		Example<Member> example = Example.of(member, macher);
+		List<Member> result = memberRepository.findAll(example);
+
 		assertThat(result.size()).isEqualTo(1);
 		assertThat(result.get(0).getAge()).isEqualTo(0);
 		assertThat(result.get(0).getUsername()).isEqualTo("m1");
