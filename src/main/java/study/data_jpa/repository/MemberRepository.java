@@ -3,10 +3,12 @@ package study.data_jpa.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNull;
 import study.data_jpa.dto.MemberDto;
 import study.data_jpa.entity.Member;
 
@@ -46,4 +48,20 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 	@Modifying(clearAutomatically = true)
 	@Query("update Member m set m.age = m.age + 1 where m.age >= :age")
 	int bulkAgePlus(@Param("age") int age);
+
+	@Query("select m from Member m left join fetch m.team t")
+	List<Member> findMemberFetchJoin();
+
+	@Override
+	@NonNull
+	@EntityGraph(attributePaths = {"team"})
+	List<Member> findAll();
+
+	@EntityGraph(attributePaths = {"team"})
+	@Query("select m from Member m")
+	List<Member> findMemberEntityGraph();
+
+	@EntityGraph(attributePaths = {"team"})
+	// @EntityGraph("Member.all")
+	List<Member> findEntityGraphByUsername(@Param("username") String username);
 }
